@@ -1,0 +1,25 @@
+{
+  "name": "elcamino_proxy",
+  "version": "1.0.0",
+  "description": "elcamino proxy",
+  "main": "proxy.js",
+  "scripts": {
+    "dev": "nodemon proxy",
+    "start": "cross-env NODE_ENV=production pm2 start proxy.js"
+  },
+  "author": "kbsm",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "cross-env": "^10.1.0",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "http-proxy-middleware": "^3.0.5",
+    "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.10.1",
+    "pm2": "^6.0.14"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
