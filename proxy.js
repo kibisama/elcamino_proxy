@@ -14,34 +14,40 @@ app.use(cors({ origin: "*" }));
 const jwt = require("jsonwebtoken");
 const { createProxyMiddleware } = require("http-proxy-middleware");
 
-app.use(
-  "/api/main",
-  createProxyMiddleware({
-    target: process.env.MAIN_API_ADDRESS,
-    changeOrigin: true,
-    ws: true,
-  })
-);
-app.use(
-  "/api/client",
-  createProxyMiddleware({
-    target: process.env.CLIENT_API_ADDRESS + "/admin",
-    changeOrigin: true,
-    on: {
-      proxyReq: (proxyReq, req, res) => {
-        proxyReq.setHeader(
-          "Authorization",
-          `Bearer ${jwt.sign(
-            { sub: "admin" },
-            process.env.CLIENT_ADMIN_JWT_TOKEN_SECRET,
-            { expiresIn: "30s" }
-          )}`
-        );
-      },
-    },
-  })
-);
+const mainProxy = createProxyMiddleware({
+  target: process.env.MAIN_API_ADDRESS,
+  changeOrigin: true,
+  ws: true,
+  pathRewrite: (path, req) => {
+    if (req.headers["upgrade"] === "websocket") {
+      return path.replace(/^\/api\/main/, "");
+    }
+    return path;
+  },
+});
 
-app.listen(app.get("port"), () =>
+app.use("/api/main", mainProxy);
+
+const clientProxy = createProxyMiddleware({
+  target: process.env.CLIENT_API_ADDRESS + "/admin",
+  changeOrigin: true,
+  on: {
+    proxyReq: (proxyReq, req, res) => {
+      proxyReq.setHeader(
+        "Authorization",
+        `Bearer ${jwt.sign(
+          { sub: "admin" },
+          process.env.CLIENT_ADMIN_JWT_TOKEN_SECRET,
+          { expiresIn: "30s" }
+        )}`
+      );
+    },
+  },
+});
+app.use("/api/client", clientProxy);
+
+const server = app.listen(app.get("port"), () =>
   console.log(`Listening on port ${app.get("port")}`)
 );
+
+server.on("upgrade", mainProxy.upgrade);
